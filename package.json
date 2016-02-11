@@ -31,6 +31,7 @@
   ],
   "dependencies": {
     "got": "^5.0.0",
+    "nerf-dart": "^1.0.0",
     "rc": "^1.1.2",
     "registry-url": "^3.0.3",
     "semver": "^5.1.0"

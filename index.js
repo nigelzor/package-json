@@ -1,15 +1,17 @@
 'use strict';
 var got = require('got');
+var nerf = require('nerf-dart');
 var registryUrl = require('registry-url');
 var rc = require('rc');
 var semver = require('semver');
 
 module.exports = function (name, version) {
 	var scope = name.split('/')[0];
-	var url = registryUrl(scope) +
-		encodeURIComponent(name).replace(/^%40/, '@');
+	var registry = registryUrl(scope);
+	var nerfed = nerf(registry);
+	var url = registry + encodeURIComponent(name).replace(/^%40/, '@');
 	var npmrc = rc('npm');
-	var token = npmrc[scope + ':_authToken'] || npmrc['//registry.npmjs.org/:_authToken'];
+	var token = npmrc[scope + ':_authToken'] || npmrc[nerfed + ':_authToken'];
 	var headers = {};
 
 	if (token) {
@@ -18,6 +20,15 @@ module.exports = function (name, version) {
 		}
 
 		headers.authorization = 'Bearer ' + token;
+	} else {
+		var username = npmrc[nerfed + ':username'];
+		var password = npmrc[nerfed + ':_password'];
+		var always = npmrc[nerfed + ':always-auth'];
+
+		if (always && username && password) {
+			token = new Buffer(username + ':' + new Buffer(password, 'base64').toString('utf8')).toString('base64');
+			headers.authorization = 'Basic ' + token;
+		}
 	}
 
 	return got(url, {
